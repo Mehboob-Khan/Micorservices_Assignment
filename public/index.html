@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Jokes Service</title>
+<link rel="stylesheet" href="styles.css"> <!-- Link to the CSS file -->
+</head>
+<body>
+  <h1>Jokes Service</h1> <!-- Added a header for better context -->
+  <select id="jokeType">
+    <option value="any">Any Type</option>
+  </select>
+  <button onclick="getJoke()">Get Joke</button>
+  <div id="jokeDisplay"></div>
+
+  <script>
+    // Function to load joke types
+    function loadJokeTypes() {
+      fetch('/types')
+        .then(handleResponse)
+        .then(types => {
+          const select = document.getElementById('jokeType');
+          types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.type;
+            option.textContent = type.type;
+            select.appendChild(option);
+          });
+        }).catch(handleError);
+    }
+    
+    // Function to get a random joke
+    function getJoke() {
+      const type = document.getElementById('jokeType').value;
+      fetch(`/joke?type=${type}`)
+        .then(handleResponse)
+        .then(joke => {
+          const display = document.getElementById('jokeDisplay');
+          display.textContent = joke.setup + ' ' + joke.punchline;
+        }).catch(handleError);
+    }
+    
+    // Handle fetch response
+    function handleResponse(response) {
+      if (!response.ok) {
+        throw new Error('Network response was not ok: ' + response.statusText);
+      }
+      return response.json();
+    }
+    
+    // Handle errors
+    function handleError(error) {
+      const display = document.getElementById('jokeDisplay');
+      display.textContent = error.message;
+      console.error('Fetch error:', error);
+    }
+
+    // Load joke types on page load
+    loadJokeTypes();
+  </script>
+</body>
+</html>
