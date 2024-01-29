@@ -1,10 +1,11 @@
 const express = require('express');
-const mysql = require('mysql2/promise'); // Change to mysql2/promise for pool support
+const mysql = require('mysql2/promise');
+const amqp = require('amqplib');
 
 const app = express();
 const port = 3000;
 
-// Static content directory for the UI
+app.use(express.json()); // Middleware for parsing application/json
 app.use(express.static('public'));
 
 // MySQL connection settings with pool
@@ -17,6 +18,18 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0
 });
+
+// RabbitMQ setup
+let rabbitMQChannel;
+
+async function connectRabbitMQ() {
+  const connection = await amqp.connect('amqp://user:password@rabbitmq');
+  rabbitMQChannel = await connection.createChannel();
+  await rabbitMQChannel.assertQueue('SUBMITTED_JOKES');
+}
+
+// Connect to RabbitMQ
+connectRabbitMQ().catch(err => console.error('Failed to connect to RabbitMQ:', err));
 
 // GET endpoint for joke types with async/await
 app.get('/types', async (req, res) => {
@@ -54,6 +67,24 @@ app.get('/joke', async (req, res) => {
   }
 });
 
+// POST endpoint to submit a new joke
+app.post('/submit-joke', async (req, res) => {
+  try {
+    const { setup, punchline, type } = req.body;
+    // Validate joke data here...
+
+    await rabbitMQChannel.sendToQueue(
+      'SUBMITTED_JOKES',
+      Buffer.from(JSON.stringify({ setup, punchline, type }))
+    );
+    res.status(200).json({ message: 'Joke submitted successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error submitting joke', error: err.message });
+  }
+});
+
+// Start the server
 app.listen(port, () => {
   console.log(`Joke service listening at http://localhost:${port}`);
 });
