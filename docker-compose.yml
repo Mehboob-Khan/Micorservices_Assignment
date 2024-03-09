@@ -13,7 +13,7 @@ services:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql  # Move the script to docker-entrypoint-initdb.d
+      - ./db.sql:/docker-entrypoint-db.d/db.sql  
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 30s
