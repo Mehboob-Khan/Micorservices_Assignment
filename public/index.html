@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <title>Jokes Service</title>
-<link rel="stylesheet" href="styles.css"> <!-- Link to the CSS file -->
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Jokes Service</h1> <!-- Added a header for better context -->
+  <h1>Jokes Service</h1>
   <select id="jokeType">
     <option value="any">Any Type</option>
   </select>
@@ -16,19 +16,26 @@
   <script>
     // Function to load joke types
     function loadJokeTypes() {
-      fetch('/types')
+      fetch('/type')
         .then(handleResponse)
         .then(types => {
           const select = document.getElementById('jokeType');
-          types.forEach(type => {
+          // Clear existing options except for the first 'any' type
+          let length = select.options.length;
+          for (let i = length - 1; i > 0; i--) {
+            select.options[i] = null;
+          }
+          // Add new types from response
+          types.forEach(typeObj => {
             const option = document.createElement('option');
-            option.value = type.type;
-            option.textContent = type.type;
+            option.value = typeObj.type;
+            option.textContent = typeObj.type;
             select.appendChild(option);
           });
-        }).catch(handleError);
+        })
+        .catch(handleError);
     }
-    
+
     // Function to get a random joke
     function getJoke() {
       const type = document.getElementById('jokeType').value;
@@ -36,10 +43,15 @@
         .then(handleResponse)
         .then(joke => {
           const display = document.getElementById('jokeDisplay');
-          display.textContent = joke.setup + ' ' + joke.punchline;
-        }).catch(handleError);
+          if(joke.setup && joke.punchline) {
+            display.textContent = joke.setup + ' ' + joke.punchline;
+          } else {
+            display.textContent = 'No joke found for the selected type.';
+          }
+        })
+        .catch(handleError);
     }
-    
+
     // Handle fetch response
     function handleResponse(response) {
       if (!response.ok) {
@@ -47,16 +59,19 @@
       }
       return response.json();
     }
-    
+
     // Handle errors
     function handleError(error) {
       const display = document.getElementById('jokeDisplay');
-      display.textContent = error.message;
+      display.textContent = 'Error: ' + error.message;
       console.error('Fetch error:', error);
     }
 
     // Load joke types on page load
     loadJokeTypes();
+
+    // Poll server for new joke types every 30 seconds
+    setInterval(loadJokeTypes, 30000);
   </script>
 </body>
 </html>
