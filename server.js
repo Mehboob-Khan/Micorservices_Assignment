@@ -10,10 +10,10 @@ app.use(express.static('public'));
 
 // MySQL connection settings with pool
 const pool = mysql.createPool({
-  host: 'db',
-  user: 'root',
-  password: 'password',
-  database: 'jokesDB',
+  host: process.env.DB_HOST || 'db', // Use the environment variable or default to 'db'
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || 'password',
+  database: process.env.DB_NAME || 'jokesDB',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -22,17 +22,30 @@ const pool = mysql.createPool({
 // RabbitMQ setup
 let rabbitMQChannel;
 
-async function connectRabbitMQ() {
-  const connection = await amqp.connect('amqp://user:password@rabbitmq');
-  rabbitMQChannel = await connection.createChannel();
-  await rabbitMQChannel.assertQueue('SUBMITTED_JOKES');
+// Retry connect to RabbitMQ
+async function connectRabbitMQ(retryCount = 0) {
+  try {
+    const connection = await amqp.connect('amqp://user:password@rabbitmq');
+    rabbitMQChannel = await connection.createChannel();
+    await rabbitMQChannel.assertQueue('SUBMITTED_JOKES');
+    console.log("Connected to RabbitMQ");
+  } catch (err) {
+    console.error('Failed to connect to RabbitMQ:', err);
+    if (retryCount < 5) {
+      setTimeout(() => connectRabbitMQ(retryCount + 1), 5000);
+    } else {
+      console.error('Failed to connect to RabbitMQ after retries:', err);
+    }
+  }
 }
+
+connectRabbitMQ();
 
 // Connect to RabbitMQ
 connectRabbitMQ().catch(err => console.error('Failed to connect to RabbitMQ:', err));
 
 // GET endpoint for joke types with async/await
-app.get('/types', async (req, res) => {
+app.get('/type', async (req, res) => {
   try {
     const [results] = await pool.query('SELECT DISTINCT type FROM jokes');
     res.json(results);
