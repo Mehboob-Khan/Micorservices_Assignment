@@ -1,0 +1,76 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Submit Joke API",
+      "version": "1.0.0",
+      "description": "API for submitting jokes to a RabbitMQ message queue"
+    },
+    "servers": [
+      {
+        "url": "http://localhost:3001",
+        "description": "Local server"
+      }
+    ],
+    "paths": {
+      "/types": {
+        "get": {
+          "summary": "Gets a list of joke types",
+          "responses": {
+            "200": {
+              "description": "A list of joke types",
+              "content": {
+                "application/json": {
+                  "example": [
+                    "General",
+                    "Programming",
+                    "Pun"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "/sub": {
+        "post": {
+          "summary": "Submits a new joke",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "setup": {
+                      "type": "string"
+                    },
+                    "punchline": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["setup", "punchline", "type"]
+                },
+                "example": {
+                  "setup": "Why don't some couples go to the gym?",
+                  "punchline": "Because some relationships don't work out!",
+                  "type": "Pun"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Joke submitted successfully"
+            },
+            "500": {
+              "description": "Error submitting joke"
+            }
+          }
+        }
+      }
+    }
+  }
+  
