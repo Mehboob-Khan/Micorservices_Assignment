@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Moderate Jokes</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="moderation-container">
+        <h1>Joke Moderation Panel</h1>
+        <div class="joke-form">
+            <label for="jokeType">Type:</label>
+            <select id="jokeType" name="type"></select>
+
+            <label for="setup">Setup:</label>
+            <input type="text" id="setup" name="setup" required>
+
+            <label for="punchline">Punchline:</label>
+            <input type="text" id="punchline" name="punchline" required>
+
+            <button id="submitJoke" type="button">Submit Joke</button>
+            <button id="deleteJoke" type="button">Delete Joke</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
