@@ -80,6 +80,23 @@ services:
     ports:
       - "3200:3200"  # Ensure this matches the port in your submit-server.js
 
+  
+  moderate-service:
+    build: 
+      context: ./moderate  # Path to the directory containing the Dockerfile for moderate-service
+    networks:
+      - jokes-net
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    volumes:
+    - ./moderate/backup-types.json:/usr/src/app/backup-types.json
+    ports:
+      - "3100:3100"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
 
 networks:
   jokes-net:
