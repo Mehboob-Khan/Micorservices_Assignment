@@ -1,12 +1,19 @@
 const express = require('express');
+const http = require('http'); // Import HTTP module
+const { Server } = require('socket.io'); // Import Server class from socket.io
 const mysql = require('mysql2/promise');
 const amqp = require('amqplib');
 
 const app = express();
+const server = http.createServer(app); // Wrap the express app with HTTP server
+const io = new Server(server); // Initialize a new instance of socket.io by passing the HTTP server object
+
 const port = 3000;
 
-app.use(express.json()); // Middleware for parsing application/json
+app.use(express.json());
 app.use(express.static('public'));
+
+
 
 // MySQL connection settings with pool
 const pool = mysql.createPool({
@@ -19,16 +26,24 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// RabbitMQ setup
+
 let rabbitMQChannel;
 
-// Retry connect to RabbitMQ
 async function connectRabbitMQ(retryCount = 0) {
   try {
     const connection = await amqp.connect('amqp://user:password@rabbitmq');
     rabbitMQChannel = await connection.createChannel();
     await rabbitMQChannel.assertQueue('SUBMITTED_JOKES');
     console.log("Connected to RabbitMQ");
+
+    // Listen for messages in the queue and emit them to connected clients
+    rabbitMQChannel.consume('SUBMITTED_JOKES', (msg) => {
+      const joke = JSON.parse(msg.content.toString());
+      // Emit the joke to all connected clients
+      io.emit('new_joke', joke);
+      rabbitMQChannel.ack(msg);
+    }, { noAck: false });
+
   } catch (err) {
     console.error('Failed to connect to RabbitMQ:', err);
     if (retryCount < 5) {
@@ -98,7 +113,6 @@ app.post('/joke', async (req, res) => {
 });
 
 
-// Start the server
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Joke service listening at http://localhost:${port}`);
 });
