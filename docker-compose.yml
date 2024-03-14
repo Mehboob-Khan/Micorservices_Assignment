@@ -68,6 +68,8 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  
+  
   submit-service:
     build:
       context: ./submit  # Path to the directory containing the Dockerfile for submit-service
@@ -98,6 +100,47 @@ services:
         condition: service_healthy
 
 
+  analytics-service:
+    build:
+      context: ./analytics  # Path to the directory containing the Dockerfile for analytics service
+    networks:
+      - jokes-net
+    environment:
+      MONGO_URI: mongodb://mongo:27017/analyticsDB  # Connection string for MongoDB
+    ports:
+      - "3300:3300"  # Map the port of analytics service
+
+  kong:
+    image: kong:latest
+    environment:
+      KONG_DATABASE: off
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    networks:
+      - jokes-net
+    ports:
+      - "80:8000"
+      - "8443:8443"
+    volumes:
+      - ./kong/kong.yml:/etc/kong/kong.yml # Assuming kong.yml is inside a directory named 'kong'
+    depends_on:
+      - joke-service
+      - submit-service
+      - moderate-service
+
+  mongo:
+    image: mongo
+    volumes:
+      - mongo-data:/data/db  # Persist MongoDB data
+    networks:
+      - jokes-net
+    ports:
+      - "27017:27017"  # Expose MongoDB on default port 27017
+
+
 networks:
   jokes-net:
     driver: bridge
@@ -105,3 +148,4 @@ networks:
 volumes:
   db_data:
   rabbitmq_data:
+  mongo-data:
