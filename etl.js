@@ -57,33 +57,33 @@ async function insertJoke(joke) {
 
 
 
-// Function to consume messages from RabbitMQ queue and insert into MySQL
+// Start the ETL Consumer function (Updated)
 async function startETLConsumer() {
   try {
     const connection = await amqp.connect('amqp://user:password@rabbitmq');
     const channel = await connection.createChannel();
-    await channel.assertQueue('SUBMITTED_JOKES');
+    await channel.assertQueue('MODERATED_JOKES'); // Listen to the MODERATED_JOKES queue
 
-    console.log("ETL Service: Waiting for messages in 'SUBMITTED_JOKES'. To exit press CTRL+C");
-    channel.consume('SUBMITTED_JOKES', async (msg) => {
+    console.log("ETL Service: Waiting for messages in 'MODERATED_JOKES'. To exit press CTRL+C");
+    channel.consume('MODERATED_JOKES', async (msg) => {
       const joke = JSON.parse(msg.content.toString());
-      console.log("ETL Service: Received a joke:", joke.setup);
+      console.log("ETL Service: Received a moderated joke:", joke.setup);
 
       try {
         const insertResult = await insertJoke(joke);
-        console.log("ETL Service: Joke inserted into the database with ID:", insertResult.insertId);
+        console.log("ETL Service: Moderated joke inserted into the database with ID:", insertResult.insertId);
         channel.ack(msg);
       } catch (err) {
-        console.error("ETL Service: Failed to insert joke into the database:", err.message);
-        // Requeue the message to try again
+        console.error("ETL Service: Failed to insert moderated joke into the database:", err.message);
         channel.nack(msg, false, true);
       }
     }, {
       noAck: false
     });
   } catch (err) {
-    console.error('ETL Service: Failed to consume messages:', err);
+    console.error('ETL Service: Failed to consume moderated jokes:', err);
   }
 }
+
 
 startETLConsumer();
