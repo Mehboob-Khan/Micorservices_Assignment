@@ -1,0 +1,27 @@
+_format_version: "2.1"
+services:
+  - name: joke-service
+    url: http://joke-service:3000
+    routes:
+      - name: joke-route
+        paths:
+          - /joke
+  - name: submit-service
+    url: http://submit-service:3200
+    routes:
+      - name: submit-route
+        paths:
+          - /submit
+  - name: moderate-service
+    url: http://moderate-service:3100
+    routes:
+      - name: moderate-route
+        paths:
+          - /mod
+
+  - name: analytics-service
+    url: http://analytics-service:3300
+    routes:
+      - name: analytics-route
+        paths:
+          - /analytics
