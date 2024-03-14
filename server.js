@@ -80,22 +80,23 @@ app.get('/joke', async (req, res) => {
   }
 });
 
-// POST endpoint to submit a new joke
-app.post('/submit-joke', async (req, res) => {
+// POST endpoint to submit a new joke (Updated)
+app.post('/joke', async (req, res) => {
   try {
     const { setup, punchline, type } = req.body;
     // Validate joke data here...
 
     await rabbitMQChannel.sendToQueue(
-      'SUBMITTED_JOKES',
+      'MODERATED_JOKES', // Assuming this is the queue for moderated (approved) jokes
       Buffer.from(JSON.stringify({ setup, punchline, type }))
     );
-    res.status(200).json({ message: 'Joke submitted successfully.' });
+    res.status(200).json({ message: 'Joke submitted for moderation.' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Error submitting joke', error: err.message });
+    res.status(500).json({ message: 'Error submitting joke for moderation', error: err.message });
   }
 });
+
 
 // Start the server
 app.listen(port, () => {
