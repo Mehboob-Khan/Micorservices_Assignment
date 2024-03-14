@@ -1,5 +1,5 @@
 # Specify the base image
-FROM node:14
+FROM node:21.6.1
 
 # Set the working directory inside the container
 WORKDIR /app
