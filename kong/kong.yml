@@ -1,27 +1,45 @@
-_format_version: "3.6.1"
+_format_version: "3.0"
+_transform: true
+
 services:
-  - name: joke-service
-    url: http://joke-service:3000
+  - host: 192.168.0.10
+    name: joke-service
+    port: 3000
+    protocol: http
     routes:
       - name: joke-route
         paths:
           - /joke
-  - name: submit-service
-    url: http://submit-service:3200
+        strip_path: true
+
+  - host: 192.168.0.10     
+    name: submit-service
+    port: 3200
+    protocol: http
     routes:
       - name: submit-route
         paths:
           - /submit
-  - name: moderate-service
-    url: http://moderate-service:3100
+        strip_path: true
+  
+  
+  - host: 192.168.0.10
+    name: moderate-service
+    port: 3100
+    protocol: http
     routes:
       - name: moderate-route
         paths:
           - /mod
+        strip_path: true
 
-  - name: analytics-service
-    url: http://analytics-service:3300
-    routes:
-      - name: analytics-route
-        paths:
-          - /analytics
+
+    
+
+
+  # - name: analytics-service
+  #   url: http://analytics-service:3300
+  #   routes:
+  #     - name: analytics-route
+  #       paths:
+  #         - /analytics
