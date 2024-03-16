@@ -8,10 +8,12 @@
 <body>
     <div class="moderation-container">
         <h1>Joke Moderation Panel</h1>
-        <div id="message" class="message"></div> <!-- Placeholder for messages -->
+        <div id="message" class="message"></div>
         <div class="joke-form">
             <label for="jokeType">Type:</label>
             <select id="jokeType" name="type"></select>
+            <!-- Field to add a new type -->
+            <input type="text" id="newType" placeholder="New Type (optional)" />
 
             <label for="setup">Setup:</label>
             <input type="text" id="setup" name="setup" required>
@@ -21,6 +23,8 @@
 
             <button id="submitJoke" type="button">Submit Joke</button>
             <button id="deleteJoke" type="button">Delete Joke</button>
+            <!-- Button for manually adding a joke -->
+            <button id="addJokeManually" type="button">Add Joke Manually</button>
         </div>
     </div>
     <script src="script.js"></script>

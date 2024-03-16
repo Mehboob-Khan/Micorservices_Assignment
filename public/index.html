@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Jokes Service</title>
 <link rel="stylesheet" href="styles.css">
+<script src="/socket.io/socket.io.js"></script> <!-- Include the Socket.IO client -->
 </head>
 <body>
   <h1>Jokes Service</h1>
@@ -14,6 +15,8 @@
   <div id="jokeDisplay"></div>
 
   <script>
+    const socket = io(); // Initialize a Socket.IO client
+
     // Function to load joke types
     function loadJokeTypes() {
       fetch('/type')
@@ -66,6 +69,14 @@
       display.textContent = 'Error: ' + error.message;
       console.error('Fetch error:', error);
     }
+
+    // Listen for live updates of new jokes
+    socket.on('new_joke', (joke) => {
+      // You can modify this part to decide how you want to display the live updates
+      console.log('New joke received:', joke);
+      const display = document.getElementById('jokeDisplay');
+      display.textContent = joke.setup + ' ' + joke.punchline; // Example of displaying the latest joke
+    });
 
     // Load joke types on page load
     loadJokeTypes();
