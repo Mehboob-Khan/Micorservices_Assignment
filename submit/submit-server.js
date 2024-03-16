@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const amqp = require('amqplib');
 const path = require('path');
+const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 3200;
 const swaggerUi = require('swagger-ui-express');
@@ -9,14 +10,15 @@ const swaggerDocument = require('./swagger.json');
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(__dirname + '/public'));
 
+const rabbitMQURL = process.env.RABBITMQ_URL || 'amqp://user:password@rabbitmq';
+const jokeServiceURL = process.env.JOKE_SERVICE_URL || 'http://joke-service:3000/type';
+const backupTypesFilePath = path.join(__dirname, 'backup-types.json');
 let rabbitMQChannel;
 
-const jokeServiceURL = process.env.JOKE_SERVICE_URL || 'http://joke-service:3000/type';
-const rabbitMQURL = process.env.RABBITMQ_URL || 'amqp://user:password@rabbitmq';
-
 async function connectRabbitMQ(retryCount = 0) {
+  console.log(`Attempting to connect to RabbitMQ at ${rabbitMQURL}, attempt ${retryCount + 1}`);
   try {
     const connection = await amqp.connect(rabbitMQURL);
     rabbitMQChannel = await connection.createChannel();
@@ -25,23 +27,29 @@ async function connectRabbitMQ(retryCount = 0) {
   } catch (err) {
     console.error('Failed to connect to RabbitMQ:', err);
     if (retryCount < 5) {
-      setTimeout(() => connectRabbitMQ(retryCount + 1), 5000);
+      setTimeout(() => connectRabbitMQ(retryCount + 1), 5000 * (retryCount + 1)); // Exponential backoff
     } else {
       console.error('Failed to connect to RabbitMQ after retries:', err);
+      process.exit(1);
     }
   }
 }
 
 connectRabbitMQ();
 
-// Enhanced error handling for joke types fetch
 app.get('/types', async (req, res) => {
   try {
     const response = await axios.get(jokeServiceURL);
     res.json(response.data);
   } catch (error) {
-    console.error('Error fetching joke types from joke service, serving from backup:', error);
-    res.json(require('./backup-types.json'));
+    console.error('Joke service is down, serving from backup:', error.message);
+    try {
+      const backupTypes = JSON.parse(fs.readFileSync(backupTypesFilePath, 'utf8'));
+      res.json(backupTypes);
+    } catch (backupError) {
+      console.error('Failed to read backup types:', backupError.message);
+      res.status(500).json({ message: 'Failed to fetch joke types from backup', error: backupError.message });
+    }
   }
 });
 

@@ -1,15 +1,17 @@
 document.addEventListener('DOMContentLoaded', function() {
   loadJokeTypes();
-  pollForNewJokes(); // Poll for new jokes instead of loading just once
+  pollForNewJokes();
 
   document.getElementById('submitJoke').addEventListener('click', function() {
-    submitJoke();
-    // No need to reload types after each operation; assuming types don't change often
+    submitOrModerateJoke('submit');
   });
-  
+
   document.getElementById('deleteJoke').addEventListener('click', function() {
-    deleteJoke();
-    // No need to reload types after each operation
+    submitOrModerateJoke('delete');
+  });
+
+  document.getElementById('addJokeManually').addEventListener('click', function() {
+    submitOrModerateJoke('addManually');
   });
 });
 
@@ -18,7 +20,7 @@ function loadJokeTypes() {
     .then(handleResponse)
     .then(types => {
       const select = document.getElementById('jokeType');
-      select.innerHTML = ''; // Clear existing options
+      select.innerHTML = '';
       types.forEach(typeObj => {
         const option = document.createElement('option');
         option.value = typeObj.type;
@@ -52,38 +54,76 @@ function pollForNewJokes() {
   fetchNewJoke(); // Initial call to start the process
 }
 
-function displayJoke(joke) {
-  document.getElementById('setup').value = joke.setup || '';
-  document.getElementById('punchline').value = joke.punchline || '';
-  document.getElementById('jokeType').value = joke.type || '';
-  window.currentJokeType = joke.type; // Keep track of the current joke's type
-  updateMessage(''); // Clear any messages when displaying a new joke
-}
+function submitOrModerateJoke(action) {
+  const setup = document.getElementById('setup').value;
+  const punchline = document.getElementById('punchline').value;
+  let type = document.getElementById('jokeType').value;
+  const newType = document.getElementById('newType').value.trim();
 
-function submitJoke() {
-  const joke = {
-    setup: document.getElementById('setup').value,
-    punchline: document.getElementById('punchline').value,
-    type: document.getElementById('jokeType').value
-  };
+  // Override type if a new type is provided
+  if (newType) {
+    type = newType;
+    addNewTypeToDropdown(newType); // Add the new type to the dropdown
+  }
 
-  fetch('/mod', {
+  const joke = { setup, punchline, type, action };
+
+  let endpoint = '/mod';
+  if (action === 'addManually') {
+    endpoint = '/add-joke'; // Assume this is the endpoint for directly adding jokes to the database
+  }
+
+  fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(joke),
   })
   .then(handleResponse)
-  .then(() => {
-    alert('Joke submitted successfully.');
-    pollForNewJokes(); // Immediately check for another joke to moderate
+  .then(response => {
+    alert(`Joke ${action === 'delete' ? 'deleted' : 'submitted'} successfully.`);
+    if (action !== 'delete') {
+      clearJokeForm();
+    }
+    pollForNewJokes();
   })
   .catch(error => {
-    console.error('Error submitting joke:', error);
-    updateMessage('Error submitting joke. Please try again.');
+    console.error(`Error ${action === 'delete' ? 'deleting' : 'submitting'} joke:`, error);
+    updateMessage(`Error ${action === 'delete' ? 'deleting' : 'submitting'} joke. Please try again.`);
   });
 }
+
+// function displayJoke(joke) {
+//   document.getElementById('setup').value = joke.setup || '';
+//   document.getElementById('punchline').value = joke.punchline || '';
+//   document.getElementById('jokeType').value = joke.type || '';
+//   window.currentJokeType = joke.type; // Keep track of the current joke's type
+//   updateMessage(''); // Clear any messages when displaying a new joke
+// }
+
+// function submitJoke() {
+//   const joke = {
+//     setup: document.getElementById('setup').value,
+//     punchline: document.getElementById('punchline').value,
+//     type: document.getElementById('jokeType').value
+//   };
+
+//   fetch('/mod', {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//     },
+//     body: JSON.stringify(joke),
+//   })
+//   .then(handleResponse)
+//   .then(() => {
+//     alert('Joke submitted successfully.');
+//     pollForNewJokes(); // Immediately check for another joke to moderate
+//   })
+//   .catch(error => {
+//     console.error('Error submitting joke:', error);
+//     updateMessage('Error submitting joke. Please try again.');
+//   });
+// }
 
 function deleteJoke() {
   fetch('/mod', {
@@ -112,4 +152,19 @@ function handleResponse(response) {
 function updateMessage(msg) {
   const messageElement = document.getElementById('message');
   messageElement.textContent = msg;
+}
+
+function addNewTypeToDropdown(newType) {
+  const select = document.getElementById('jokeType');
+  const option = document.createElement('option');
+  option.value = newType;
+  option.textContent = newType;
+  select.appendChild(option);
+  select.value = newType; // Set the newly added type as the selected option
+}
+
+function clearJokeForm() {
+  document.getElementById('setup').value = '';
+  document.getElementById('punchline').value = '';
+  document.getElementById('newType').value = '';
 }
